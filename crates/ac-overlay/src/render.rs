@@ -64,6 +64,9 @@ pub enum Cell {
     Bottleneck { pills: Vec<Pill> },
 }
 
+/// Overlay labels in Russian; set by the app before rendering
+pub static RUSSIAN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 pub struct Scene<'a> {
     pub cells: &'a [Cell],
     pub style: &'a OverlayStyle,
@@ -749,7 +752,7 @@ fn classic(ctx: &Ctx, scene: &Scene) -> Pixmap {
             Cell::Fps { value, color, real, unit } => {
                 let mut parts = Vec::new();
                 if let Some(r) = real {
-                    parts.push(Part::colored(r.clone(), "real", [170, 170, 178, 255]));
+                    parts.push(Part::colored(r.clone(), if RUSSIAN.load(std::sync::atomic::Ordering::Relaxed) { "реал" } else { "real" }, [170, 170, 178, 255]));
                 }
                 parts.push(Part::colored(value.clone(), unit.clone(), *color));
                 parts.extend(frames.iter().cloned());

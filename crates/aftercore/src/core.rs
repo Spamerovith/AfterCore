@@ -644,6 +644,40 @@ fn opt(v: Option<f32>, prec: usize) -> String {
 }
 
 /// Build overlay cells from configuration + live data (shared with the UI preview).
+/// Overlay label translation (English is the default, like RTSS)
+fn to_russian(en: &str) -> String {
+    if let Some(rest) = en.strip_prefix("spill ") {
+        return format!("вытеснение {}", rest.replace("GB", "ГБ"));
+    }
+    if let Some(rest) = en.strip_prefix("paging ") {
+        return format!("подкачка {}", rest);
+    }
+    match en {
+        "avg" => "сред",
+        "max" => "макс",
+        "% fan" => "% вент",
+        "% max core" => "% макс ядро",
+        "CPU CORES" => "ЯДРА CPU",
+        "GB RAM" => "ГБ RAM",
+        "GAME" => "ИГРА",
+        "TIME" => "ВРЕМЯ",
+        "Frametime" => "Время кадра",
+        "Framerate" => "Частота кадров",
+        "GPU usage" => "Загрузка GPU",
+        "CPU usage" => "Загрузка CPU",
+        "RAM usage" => "Заполнение RAM",
+        "CAP" => "ЛИМИТ",
+        "bound" => "упор",
+        "power limit" => "лимит питания",
+        "thermal" => "перегрев",
+        "main thread" => "главный поток",
+        "all cores" => "все ядра",
+        "limit" => "лимит",
+        other => other,
+    }
+    .to_string()
+}
+
 pub fn build_cells(ov: &OverlayConfig, d: &LiveData) -> Vec<Cell> {
     let st = &ov.style;
     let s = d.sensors;
@@ -652,6 +686,9 @@ pub fn build_cells(ov: &OverlayConfig, d: &LiveData) -> Vec<Cell> {
     let on = |m: Metric| ov.is_on(m);
     let col = |c: Rgba| if classic { c } else { st.label };
     let enabled: Vec<Metric> = ov.items.iter().filter(|i| i.enabled).map(|i| i.metric).collect();
+    ac_overlay::RUSSIAN.store(ov.russian, Ordering::Relaxed);
+    let ru = ov.russian;
+    let tr = move |en: &str| -> String { if ru { to_russian(en) } else { en.to_string() } };
     let mut title: Option<Cell> = None;
     let mut fps_cell: Option<Cell> = None;
     let mut frames: Option<Cell> = None;
@@ -704,10 +741,10 @@ pub fn build_cells(ov: &OverlayConfig, d: &LiveData) -> Vec<Cell> {
                         Metric::FrameTime => {
                             parts.push(Part::new(opt(stats.map(|f| f.frametime_ms).filter(|v| *v > 0.0), 1), "ms"))
                         }
-                        Metric::FpsAvg => parts.push(Part::new(v(|f| f.avg_fps), "avg")),
+                        Metric::FpsAvg => parts.push(Part::new(v(|f| f.avg_fps), tr("avg"))),
                         Metric::Low1 => parts.push(Part::new(v(|f| f.low1), "1% low")),
                         Metric::Low01 => parts.push(Part::new(v(|f| f.low01), "0.1% low")),
-                        Metric::FpsMax => parts.push(Part::new(v(|f| f.max_fps), "max")),
+                        Metric::FpsMax => parts.push(Part::new(v(|f| f.max_fps), tr("max"))),
                         _ => {}
                     }
                 }
@@ -726,7 +763,7 @@ pub fn build_cells(ov: &OverlayConfig, d: &LiveData) -> Vec<Cell> {
                         }
                         Metric::GpuClock => parts.push(Part::new(opt(g.clock_mhz, 0), "MHz")),
                         Metric::GpuPower => parts.push(Part::new(opt(g.power_w, 0), "W")),
-                        Metric::GpuFan => parts.push(Part::new(opt(g.fan_pct, 0), "% fan")),
+                        Metric::GpuFan => parts.push(Part::new(opt(g.fan_pct, 0), tr("% fan"))),
                         _ => {}
                     }
                 }
@@ -751,7 +788,7 @@ pub fn build_cells(ov: &OverlayConfig, d: &LiveData) -> Vec<Cell> {
                         Metric::CpuMaxCore => {
                             let v = s.cpu_max_core.unwrap_or(0.0);
                             let c = if v >= 95.0 { Some(st.bad) } else if v >= 85.0 { Some(st.warn) } else { None };
-                            parts.push(Part { value: opt(s.cpu_max_core, 0), unit: "% max core".into(), color: c });
+                            parts.push(Part { value: opt(s.cpu_max_core, 0), unit: tr("% max core").into(), color: c });
                         }
                         // HWiNFO-only values: hidden instead of a dead "-" when it is not running.
                         Metric::CpuTemp if s.cpu_temp.is_some() => {
@@ -776,7 +813,7 @@ pub fn build_cells(ov: &OverlayConfig, d: &LiveData) -> Vec<Cell> {
                         &fresh
                     }
                 };
-                strip = Some(Cell::Bottleneck { pills: bottleneck_pills(v, st) });
+                strip = Some(Cell::Bottleneck { pills: bottleneck_pills(v, st, &tr) });
             }
             Metric::CpuCores => {
                 if classic || ov.compact {
@@ -794,7 +831,7 @@ pub fn build_cells(ov: &OverlayConfig, d: &LiveData) -> Vec<Cell> {
                         .enumerate()
                         .map(|(i, l)| Part::new(format!("{l:.0}"), format!("% · {}", i + 1)))
                         .collect();
-                    body.push(Cell::Section { title: "CPU CORES".into(), color: col(C_CPU), parts });
+                    body.push(Cell::Section { title: tr("CPU CORES").into(), color: col(C_CPU), parts });
                 }
             }
             Metric::Ram => body.push(Cell::Section {
@@ -809,19 +846,19 @@ pub fn build_cells(ov: &OverlayConfig, d: &LiveData) -> Vec<Cell> {
                     parts.push(Part::new(opt(t.map(|t| t.cpu_pct), 0), "% CPU"));
                 }
                 if on(Metric::ProcRam) {
-                    parts.push(Part::new(opt(t.map(|t| t.ram_gb), 1), "GB RAM"));
+                    parts.push(Part::new(opt(t.map(|t| t.ram_gb), 1), tr("GB RAM")));
                 }
-                body.push(Cell::Section { title: "GAME".into(), color: col(C_APP), parts });
+                body.push(Cell::Section { title: tr("GAME").into(), color: col(C_APP), parts });
             }
             Metric::Clock => body.push(Cell::Section {
-                title: "TIME".into(),
+                title: tr("TIME").into(),
                 color: col(C_TIME),
                 parts: vec![Part::new(ac_core::win::local_clock(), "")],
             }),
             Metric::Graph => {
                 let ft = stats.map(|f| f.frametime_ms).unwrap_or(0.0);
                 graphs.push(Cell::Graph {
-                    title: "Frametime".into(),
+                    title: tr("Frametime").into(),
                     value: if ft > 0.0 { format!("{ft:.1} ms") } else { "-".into() },
                     values: stats.map(|f| f.graph.clone()).unwrap_or_default(),
                     max: 0.0,
@@ -832,7 +869,7 @@ pub fn build_cells(ov: &OverlayConfig, d: &LiveData) -> Vec<Cell> {
                 let h = stats.map(|f| f.fps_hist.clone()).unwrap_or_default();
                 let peak = h.iter().cloned().fold(60.0, f32::max) * 1.15;
                 graphs.push(Cell::Graph {
-                    title: "Framerate".into(),
+                    title: tr("Framerate").into(),
                     value: stats.map(|f| format!("{:.0} FPS", f.fps)).unwrap_or_else(|| "-".into()),
                     values: h,
                     max: peak,
@@ -840,21 +877,21 @@ pub fn build_cells(ov: &OverlayConfig, d: &LiveData) -> Vec<Cell> {
                 });
             }
             Metric::GraphGpu => graphs.push(Cell::Graph {
-                title: "GPU usage".into(),
+                title: tr("GPU usage").into(),
                 value: format!("{} %", opt(s.gpu.load, 0)),
                 values: s.gpu_hist.iter().copied().collect(),
                 max: 100.0,
                 color: C_GPU,
             }),
             Metric::GraphCpu => graphs.push(Cell::Graph {
-                title: "CPU usage".into(),
+                title: tr("CPU usage").into(),
                 value: format!("{} %", opt(s.cpu_load, 0)),
                 values: s.cpu_hist.iter().copied().collect(),
                 max: 100.0,
                 color: C_CPU,
             }),
             Metric::GraphRam => graphs.push(Cell::Graph {
-                title: "RAM usage".into(),
+                title: tr("RAM usage").into(),
                 value: format!("{:.1} GB", s.ram_used_gb),
                 values: s.ram_hist.iter().copied().collect(),
                 max: 100.0,
@@ -914,12 +951,12 @@ pub struct BnState {
     verdict: Verdict,
 }
 
-fn bottleneck_pills(v: &Verdict, st: &ac_core::config::OverlayStyle) -> Vec<ac_overlay::Pill> {
+fn bottleneck_pills(v: &Verdict, st: &ac_core::config::OverlayStyle, tr: &dyn Fn(&str) -> String) -> Vec<ac_overlay::Pill> {
     let mut out = Vec::new();
     if v.limiter == Some(Limiter::Cap) {
         out.push(ac_overlay::Pill {
-            text: format!("CAP {:.0}", v.cap_fps.unwrap_or(0.0)),
-            sub: v.detail.clone(),
+            text: format!("{} {:.0}", tr("CAP"), v.cap_fps.unwrap_or(0.0)),
+            sub: tr(&v.detail),
             color: st.accent,
             bound: true,
         });
@@ -935,7 +972,7 @@ fn bottleneck_pills(v: &Verdict, st: &ac_core::config::OverlayStyle) -> Vec<ac_o
         let bound = v.limiter == Some(lim);
         out.push(ac_overlay::Pill {
             text: format!("{name} {pct:.0}%"),
-            sub: if v.detail.is_empty() { "bound".into() } else { format!("bound · {}", v.detail) },
+            sub: if v.detail.is_empty() { tr("bound") } else { format!("{} · {}", tr("bound"), tr(&v.detail)) },
             color: match r.level {
                 Level::Ok => st.good,
                 Level::Pressure => st.warn,

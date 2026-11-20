@@ -463,6 +463,8 @@ pub struct OverlayConfig {
     pub compact: bool,
     /// With frame generation show the game's own FPS next to the presented FPS.
     pub show_real_fps: bool,
+    /// Overlay labels in Russian (otherwise English, like RTSS)
+    pub russian: bool,
 }
 
 impl Default for OverlayConfig {
@@ -508,6 +510,7 @@ impl Default for OverlayConfig {
             hide_from_capture: false,
             compact: false,
             show_real_fps: true,
+            russian: false,
         }
     }
 }
@@ -674,6 +677,8 @@ pub struct General {
     pub sensor_interval_ms: u32,
     pub blacklist: Vec<String>,
     pub notifications: bool,
+    /// Download new versions from GitHub Releases
+    pub auto_update: bool,
     /// Allow core-set / priority changes for games protected by an anti-cheat.
     pub tweak_anticheat_games: bool,
 }
@@ -703,6 +708,7 @@ impl Default for General {
             .map(|s| s.to_string())
             .collect(),
             notifications: true,
+            auto_update: true,
             tweak_anticheat_games: false,
         }
     }

@@ -4,6 +4,7 @@
 mod core;
 mod hotkeys;
 mod tray;
+mod updater;
 mod ui;
 
 use std::sync::Arc;
@@ -21,6 +22,7 @@ pub struct Args {
     pub page: Option<String>,
     pub desktop_preview: bool,
     pub keys_diag: bool,
+    pub wait_instance: bool,
 }
 
 fn parse_args() -> Args {
@@ -35,6 +37,7 @@ fn parse_args() -> Args {
         page: val("--page"),
         desktop_preview: v.iter().any(|a| a == "--desktop-preview"),
         keys_diag: v.iter().any(|a| a == "--keys-diag"),
+        wait_instance: v.iter().any(|a| a == "--wait-instance"),
     }
 }
 
@@ -132,7 +135,15 @@ fn main() {
         // UAC declined: continue with limited functionality.
     }
 
-    if args.screenshot.is_none() && !single_instance() {
+    if args.wait_instance {
+        // Restart after an update: give the old instance time to exit.
+        for _ in 0..50 {
+            if single_instance() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(200));
+        }
+    } else if args.screenshot.is_none() && !single_instance() {
         return;
     }
 
@@ -145,6 +156,10 @@ fn main() {
         hotkeys::set_diag(true);
     }
     core.spawn_watcher();
+    if args.screenshot.is_none() {
+        let c = core.clone();
+        updater::spawn(move || c.cfg.read().general.auto_update);
+    }
     hotkeys::spawn(core.clone());
     ac_overlay::spawn(Arc::new(core::CoreOverlay(core.clone())));
 

@@ -11,5 +11,5 @@ pub mod logo;
 pub mod render;
 pub mod window;
 
-pub use render::{Cell, Part, Pill, Renderer, Scene};
+pub use render::{Cell, Part, Pill, Renderer, Scene, RUSSIAN};
 pub use window::{spawn, OverlayFrame, OverlaySource};

@@ -192,6 +192,7 @@ impl App {
                 "С DLSS / FSR Frame Generation слева серым - настоящие кадры игры (нужен Reflex в игре)",
                 &mut ov.show_real_fps,
             );
+            widgets::toggle_row(ui, &pal, "Подписи на русском", "ВРЕМЯ, ИГРА, сред, макс, упор и т.д. вместо английских", &mut ov.russian);
             ui.add_space(4.0);
             widgets::row(ui, &pal, "Когда показывать", "«Только в играх» - полноэкранные приложения и игры с правилом", |ui| {
                 widgets::segmented(

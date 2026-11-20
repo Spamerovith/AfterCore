@@ -20,7 +20,7 @@ checksum = "366ffbaa4442f4684d91e2cd7c5ea7c4ed8add41959a31447066e279e432b618"
 
 [[package]]
 name = "ac-core"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -29,7 +29,7 @@ dependencies = [
 
 [[package]]
 name = "ac-overlay"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "ab_glyph",
  "ac-core",
@@ -40,7 +40,7 @@ dependencies = [
 
 [[package]]
 name = "ac-telemetry"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "ac-core",
  "parking_lot",
@@ -55,7 +55,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "aftercore"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "ac-core",
  "ac-overlay",

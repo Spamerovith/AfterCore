@@ -91,6 +91,36 @@ impl App {
                 &mut g.auto_elevate,
             );
             widgets::toggle_row(ui, &pal, "Уведомления в оверлее", "Смена профиля, итоги бенчмарка", &mut g.notifications);
+            widgets::toggle_row(
+                ui,
+                &pal,
+                "Обновляться автоматически",
+                "Новая версия скачивается с GitHub и запускается при следующем старте",
+                &mut g.auto_update,
+            );
+            let st = crate::updater::state();
+            ui.horizontal_wrapped(|ui| {
+                let busy = matches!(st, crate::updater::State::Checking | crate::updater::State::Downloading(_));
+                ui.add_enabled_ui(!busy, |ui| {
+                    if widgets::ghost(ui, &pal, ico::REFRESH, "Проверить обновления").clicked() {
+                        std::thread::spawn(|| crate::updater::check(true));
+                    }
+                });
+                if let crate::updater::State::Ready(_) = &st {
+                    if widgets::primary(ui, &pal, ico::BOLT, "Перезапустить").clicked() {
+                        crate::updater::restart(&self.core);
+                    }
+                }
+                let text = match &st {
+                    crate::updater::State::Idle => format!("Версия {}", crate::updater::current()),
+                    crate::updater::State::Checking => "Проверка...".into(),
+                    crate::updater::State::UpToDate => format!("Версия {} - последняя", crate::updater::current()),
+                    crate::updater::State::Downloading(v) => format!("Скачивание {v}..."),
+                    crate::updater::State::Ready(v) => format!("{v} установлена, заработает после перезапуска"),
+                    crate::updater::State::Error(e) => format!("Обновление: {e}"),
+                };
+                widgets::muted(ui, &pal, &text);
+            });
         });
         ui.add_space(4.0);
 
