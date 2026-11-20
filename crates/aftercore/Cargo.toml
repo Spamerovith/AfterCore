@@ -1,0 +1,27 @@
+[package]
+name = "aftercore"
+description = "AfterCore - modern FPS counter, hardware monitor and in-game overlay"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "AfterCore"
+path = "src/main.rs"
+
+[dependencies]
+ac-core.workspace = true
+ac-telemetry.workspace = true
+ac-overlay.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+parking_lot.workspace = true
+tiny-skia.workspace = true
+windows-sys.workspace = true
+eframe = { version = "0.31", default-features = false, features = ["glow", "default_fonts"] }
+tray-icon = "0.20"
+raw-window-handle = "0.6"
+
+[build-dependencies]
+tiny-skia.workspace = true
+embed-resource = "3"

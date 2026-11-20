@@ -1,0 +1,11 @@
+[package]
+name = "ac-core"
+description = "AfterCore: settings, profiles, CPU topology, hotkeys and Win32 helpers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+windows-sys.workspace = true

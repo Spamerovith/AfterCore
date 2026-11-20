@@ -1,0 +1,11 @@
+[package]
+name = "ac-telemetry"
+description = "AfterCore: injection-free frame timing via ETW and hardware sensors (PDH, NVML)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+ac-core.workspace = true
+parking_lot.workspace = true
+windows-sys.workspace = true

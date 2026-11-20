@@ -1,0 +1,13 @@
+[package]
+name = "ac-overlay"
+description = "AfterCore: software-rendered, click-through layered overlay window"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+ac-core.workspace = true
+parking_lot.workspace = true
+tiny-skia.workspace = true
+ab_glyph.workspace = true
+windows-sys.workspace = true
